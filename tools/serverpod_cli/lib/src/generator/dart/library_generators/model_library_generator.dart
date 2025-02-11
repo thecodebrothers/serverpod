@@ -224,6 +224,7 @@ class SerializableModelLibraryGenerator {
         classDefinition.fields,
         tableName,
         classDefinition.subDirParts,
+        classDefinition.isImmutable,
       ));
 
       classBuilder.constructors.addAll([
@@ -256,6 +257,12 @@ class SerializableModelLibraryGenerator {
       } else if (!classDefinition.isSealed) {
         classBuilder.methods.add(_buildCopyWithMethod(classDefinition, fields));
       }
+
+      if (classDefinition.isImmutable) {
+        classBuilder.methods.add(_buildEqualOperator(classDefinition, fields));
+        classBuilder.methods.add(_buildHashCodeMethod(classDefinition, fields));
+      }
+
       // Serialization
 
       if (!classDefinition.isSealed) {
@@ -542,6 +549,97 @@ class SerializableModelLibraryGenerator {
             )
             .returned
             .statement;
+      },
+    );
+  }
+
+  Method _buildEqualOperator(
+    ClassDefinition classDefinition,
+    List<SerializableModelFieldDefinition> fields,
+  ) {
+    return Method(
+      (m) {
+        m.name = 'operator ==';
+        m.annotations.add(refer('override'));
+        m.requiredParameters.add(Parameter((p) {
+          p
+            ..name = 'other'
+            ..named = false
+            ..type = refer('Object');
+        }));
+
+        var comparisons = [
+          refer('other').property('runtimeType').equalTo(refer('runtimeType')),
+          refer('other').isA(refer(classDefinition.className)),
+          ...fields.map((field) {
+            var name = field.name;
+            var thisProperty = refer(name);
+            var otherProperty = refer('other').property(name);
+
+            if (field.type.isCollectionType) {
+              return refer('DeepCollectionEquality', serverpodUrl(serverCode))
+                  .constInstance([])
+                  .property('equals')
+                  .call([otherProperty, thisProperty]);
+            }
+
+            return refer('identical')
+                .call([otherProperty, thisProperty])
+                .or(otherProperty.equalTo(thisProperty))
+                .parenthesized;
+          })
+        ];
+
+        var comparisonCode = refer('identical')
+            .call([refer('other'), refer('this')]).or(
+                comparisons.reduce((value, nextField) => value.and(nextField)));
+
+        m.returns = refer('bool');
+        m.body = Block.of([
+          const Code('return '),
+          comparisonCode.code,
+          const Code(';'),
+        ]);
+      },
+    );
+  }
+
+  Method _buildHashCodeMethod(
+    ClassDefinition classDefinition,
+    List<SerializableModelFieldDefinition> fields,
+  ) {
+    return Method(
+      (m) {
+        m.name = 'hashCode';
+        m.type = MethodType.getter;
+        m.annotations.add(refer('override'));
+
+        var expressions = [
+          refer('runtimeType'),
+          ...fields.map((field) {
+            if (field.type.isCollectionType) {
+              return refer('DeepCollectionEquality', serverpodUrl(serverCode))
+                  .constInstance([])
+                  .property('hash')
+                  .call([refer(field.name)]);
+            }
+
+            return refer(field.name);
+          })
+        ];
+
+        var hashCode = switch (expressions.length) {
+          1 => expressions.first.property('hashCode'),
+          <= 20 => refer('Object').property('hash').call(expressions),
+          _ => refer('Object').property('hashAll').call(expressions),
+        };
+
+        m.returns = refer('int');
+        m.body = Block.of([
+          const Code('return '),
+          hashCode.code,
+          const Code(';'),
+        ]);
       },
     );
   }
@@ -1094,6 +1192,10 @@ class SerializableModelLibraryGenerator {
         setAsToThis: true,
       ));
 
+      if (classDefinition.isImmutable) {
+        c.constant = true;
+      }
+
       for (SerializableModelFieldDefinition field in fields) {
         if (!field.hasDefaults) continue;
         if (classDefinition.inheritedFields.contains(field)) continue;
@@ -1128,6 +1230,10 @@ class SerializableModelLibraryGenerator {
         setAsToThis: false,
       ));
 
+      if (classDefinition.isImmutable) {
+        c.constant = true;
+      }
+
       c.redirect = refer('_${className}Impl');
     });
   }
@@ -1153,6 +1259,10 @@ class SerializableModelLibraryGenerator {
           field.name: refer(field.name),
         };
       });
+
+      if (classDefinition.isImmutable) {
+        c.constant = true;
+      }
 
       c.initializers.add(refer('super._').call([], namedParams).code);
     });
@@ -1298,7 +1408,8 @@ class SerializableModelLibraryGenerator {
   List<Field> _buildModelClassFields(
       List<SerializableModelFieldDefinition> fields,
       String? tableName,
-      List<String> subDirParts) {
+      List<String> subDirParts,
+      bool isClassImmutable) {
     List<Field> modelClassFields = [];
     var classFields = fields
         .where((f) =>
@@ -1317,6 +1428,8 @@ class SerializableModelLibraryGenerator {
           ..name =
               _createSerializableFieldNameReference(serverCode, field).symbol
           ..docs.addAll(field.documentation ?? []);
+        f.modifier =
+            isClassImmutable ? FieldModifier.final$ : FieldModifier.var$;
       }));
     }
 
