@@ -1,6 +1,5 @@
 import 'package:code_builder/code_builder.dart';
 import 'package:recase/recase.dart';
-
 import 'package:serverpod_cli/analyzer.dart';
 import 'package:serverpod_cli/src/analyzer/models/definitions.dart';
 import 'package:serverpod_cli/src/analyzer/models/utils/duration_utils.dart';
@@ -546,8 +545,6 @@ class SerializableModelLibraryGenerator {
       (m) {
         m.name = 'operator ==';
         m.annotations.add(refer('override'));
-        m.annotations
-            .add(refer('useResult', serverpodUrl(serverCode)).expression);
         m.requiredParameters.add(Parameter((p) {
           p
             ..name = 'other'
@@ -588,8 +585,6 @@ class SerializableModelLibraryGenerator {
         m.name = 'hashCode';
         m.type = MethodType.getter;
         m.annotations.add(refer('override'));
-        m.annotations
-            .add(refer('useResult', serverpodUrl(serverCode)).expression);
 
         var hashedFields = [
           'runtimeType',
