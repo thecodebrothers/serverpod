@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 
+import 'package:minio/minio.dart';
 import 'package:serverpod/serverpod.dart';
+
 import '../aws_s3_client/client/client.dart';
-import '../aws_s3_upload/aws_s3_upload.dart';
+import '../aws_s3_upload/digital_ocean_s3_upload.dart';
 
 /// Concrete implementation of S3 cloud storage for use with Serverpod.
 class S3CloudStorage extends CloudStorage {
@@ -14,6 +16,7 @@ class S3CloudStorage extends CloudStorage {
   late final String publicHost;
 
   late final AwsS3Client _s3Client;
+  late final Minio _minio;
 
   /// Creates a new [S3CloudStorage] reference.
   S3CloudStorage({
@@ -43,15 +46,22 @@ class S3CloudStorage extends CloudStorage {
     _awsAccessKeyId = awsAccessKeyId;
     _awsSecretKey = awsSecretKey;
 
-    // Create client
     _s3Client = AwsS3Client(
       accessKey: _awsAccessKeyId,
       secretKey: _awsSecretKey,
       bucketId: bucket,
       region: region,
+      host: '$region.digitaloceanspaces.com',
     );
 
-    this.publicHost = publicHost ?? '$bucket.s3.$region.amazonaws.com';
+    _minio = Minio(
+      endPoint: '$region.digitaloceanspaces.com',
+      accessKey: _awsAccessKeyId,
+      secretKey: _awsSecretKey,
+      useSSL: true,
+    );
+
+    this.publicHost = publicHost ?? '$bucket.$region.digitaloceanspaces.com';
   }
 
   @override
@@ -62,7 +72,7 @@ class S3CloudStorage extends CloudStorage {
     DateTime? expiration,
     bool verified = true,
   }) async {
-    await AwsS3Uploader.uploadData(
+    await DigitalOceanS3Uploader.uploadData(
       accessKey: _awsAccessKeyId,
       secretKey: _awsSecretKey,
       bucket: bucket,
@@ -101,8 +111,12 @@ class S3CloudStorage extends CloudStorage {
     required Session session,
     required String path,
   }) async {
-    var response = await _s3Client.headObject(path);
-    return response.statusCode == 200;
+    try {
+      await _minio.statObject(bucket, path);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   @override
@@ -120,7 +134,7 @@ class S3CloudStorage extends CloudStorage {
     Duration expirationDuration = const Duration(minutes: 10),
     int maxFileSize = 10 * 1024 * 1024,
   }) async {
-    return await AwsS3Uploader.getDirectUploadDescription(
+    return await DigitalOceanS3Uploader.getDirectUploadDescription(
       accessKey: _awsAccessKeyId,
       secretKey: _awsSecretKey,
       bucket: bucket,
