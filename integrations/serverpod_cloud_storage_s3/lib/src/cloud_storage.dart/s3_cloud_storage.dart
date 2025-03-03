@@ -107,6 +107,22 @@ class S3CloudStorage extends CloudStorage {
   }
 
   @override
+  Future<Uri?> getPresignedUrl({
+    required Session session,
+    required String path,
+    Duration expireDuration = const Duration(days: 7),
+  }) async {
+    if (await fileExists(session: session, path: path)) {
+      return Uri.parse(await _minio.presignedGetObject(
+        bucket,
+        path,
+        expires: expireDuration.inSeconds,
+      ));
+    }
+    return null;
+  }
+
+  @override
   Future<bool> fileExists({
     required Session session,
     required String path,
@@ -142,6 +158,7 @@ class S3CloudStorage extends CloudStorage {
       uploadDst: path,
       expires: expirationDuration,
       maxFileSize: maxFileSize,
+      public: public,
     );
   }
 
