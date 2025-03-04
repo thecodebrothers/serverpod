@@ -49,6 +49,14 @@ abstract class CloudStorage {
     required String path,
   });
 
+  /// Returns a public link to a file in the private storage.
+  /// Link is valid for a certain duration.
+  Future<Uri?> getPresignedUrl({
+    required Session session,
+    required String path,
+    Duration expireDuration = const Duration(days: 7),
+  });
+
   /// Returns true if the file exists.
   Future<bool> fileExists({
     required Session session,
