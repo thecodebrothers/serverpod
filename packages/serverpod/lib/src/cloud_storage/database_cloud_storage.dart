@@ -64,6 +64,29 @@ class DatabaseCloudStorage extends CloudStorage {
   }
 
   @override
+  Future<Uri?> getPresignedUrl({
+    required Session session,
+    required String path,
+    Duration expireDuration = const Duration(days: 7),
+  }) async {
+    var exists = await fileExists(session: session, path: path);
+    if (!exists) return null;
+
+    var config = session.server.serverpod.config;
+
+    return Uri(
+      scheme: config.apiServer.publicScheme,
+      host: config.apiServer.publicHost,
+      port: config.apiServer.publicPort,
+      path: '/serverpod_cloud_storage',
+      queryParameters: {
+        'method': 'file',
+        'path': path,
+      },
+    );
+  }
+
+  @override
   Future<ByteData?> retrieveFile({
     required Session session,
     required String path,
