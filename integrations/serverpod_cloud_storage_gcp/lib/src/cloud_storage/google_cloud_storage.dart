@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:serverpod/serverpod.dart';
+
 import '../aws_s3_client/client/client.dart';
 import '../aws_s3_upload/aws_s3_upload.dart';
 
@@ -94,6 +95,15 @@ class GoogleCloudStorage extends CloudStorage {
       return Uri.parse('https://$publicHost/$path');
     }
     return null;
+  }
+
+  @override
+  Future<Uri?> getPresignedUrl({
+    required Session session,
+    required String path,
+    Duration expireDuration = const Duration(days: 7),
+  }) {
+    throw UnimplementedError();
   }
 
   @override
