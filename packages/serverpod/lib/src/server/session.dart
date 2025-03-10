@@ -11,6 +11,7 @@ import 'package:serverpod/src/server/log_manager/log_manager.dart';
 import 'package:serverpod/src/server/log_manager/log_settings.dart';
 import 'package:serverpod/src/server/log_manager/log_writers.dart';
 import 'package:serverpod/src/server/serverpod.dart';
+
 import '../cache/caches.dart';
 
 /// A listener that will be called when the session is about to close.
@@ -521,6 +522,25 @@ class StorageAccess {
     }
 
     return await storage.getPublicUrl(session: _session, path: path);
+  }
+
+  /// Returns a public link to a file in the private storage.
+  /// Link is valid for a certain duration.
+  Future<Uri?> getPresignedUrl({
+    required String storageId,
+    required String path,
+    Duration expireDuration = const Duration(days: 7),
+  }) async {
+    var storage = _session.server.serverpod.storage[storageId];
+    if (storage == null) {
+      throw CloudStorageException('Storage $storageId is not registered');
+    }
+
+    return await storage.getPresignedUrl(
+      session: _session,
+      path: path,
+      expireDuration: expireDuration,
+    );
   }
 
   /// Bulk lookup of a list of public links to files given a list of paths in
