@@ -12,26 +12,31 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
 abstract class Example implements _i1.SerializableModel {
-  Example._({
+  const Example._({
     required this.name,
     required this.data,
+    required this.items,
   });
 
-  factory Example({
+  const factory Example({
     required String name,
     required int data,
+    required List<int> items,
   }) = _ExampleImpl;
 
   factory Example.fromJson(Map<String, dynamic> jsonSerialization) {
     return Example(
       name: jsonSerialization['name'] as String,
       data: jsonSerialization['data'] as int,
+      items: (jsonSerialization['items'] as List).map((e) => e as int).toList(),
     );
   }
 
-  String name;
+  final String name;
 
-  int data;
+  final int data;
+
+  final List<int> items;
 
   /// Returns a shallow copy of this [Example]
   /// with some or all fields replaced by the given arguments.
@@ -39,12 +44,48 @@ abstract class Example implements _i1.SerializableModel {
   Example copyWith({
     String? name,
     int? data,
+    List<int>? items,
   });
+  @override
+  bool operator ==(Object other) {
+    return identical(
+          other,
+          this,
+        ) ||
+        other.runtimeType == runtimeType &&
+            other is Example &&
+            (identical(
+                  other.name,
+                  name,
+                ) ||
+                other.name == name) &&
+            (identical(
+                  other.data,
+                  data,
+                ) ||
+                other.data == data) &&
+            const _i1.DeepCollectionEquality().equals(
+              other.items,
+              items,
+            );
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      runtimeType,
+      name,
+      data,
+      const _i1.DeepCollectionEquality().hash(items),
+    );
+  }
+
   @override
   Map<String, dynamic> toJson() {
     return {
       'name': name,
       'data': data,
+      'items': items.toJson(),
     };
   }
 
@@ -55,12 +96,14 @@ abstract class Example implements _i1.SerializableModel {
 }
 
 class _ExampleImpl extends Example {
-  _ExampleImpl({
+  const _ExampleImpl({
     required String name,
     required int data,
+    required List<int> items,
   }) : super._(
           name: name,
           data: data,
+          items: items,
         );
 
   /// Returns a shallow copy of this [Example]
@@ -70,10 +113,12 @@ class _ExampleImpl extends Example {
   Example copyWith({
     String? name,
     int? data,
+    List<int>? items,
   }) {
     return Example(
       name: name ?? this.name,
       data: data ?? this.data,
+      items: items ?? this.items.map((e0) => e0).toList(),
     );
   }
 }

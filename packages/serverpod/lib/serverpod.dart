@@ -4,28 +4,23 @@
 // See: https://github.com/serverpod/serverpod/pull/2900
 library serverpod;
 
-// Config
-export 'package:serverpod_shared/src/config.dart';
-
-// Server
-export 'package:serverpod/server.dart';
-
-// Web server
-export 'package:serverpod/relic.dart';
-
+// Collections equality checks
+export 'package:collection/collection.dart' show DeepCollectionEquality;
+export 'package:meta/meta.dart' show useResult;
 // Database
 export 'package:serverpod/database.dart';
-
-// Serialization and logging
-export 'package:serverpod_serialization/serverpod_serialization.dart';
-export 'package:serverpod/src/util/http_request_extension.dart';
-export 'package:serverpod/src/generated/log_level.dart';
-
+// Web server
+export 'package:serverpod/relic.dart';
+// Server
+export 'package:serverpod/server.dart';
+// Cache
+export 'package:serverpod/src/cache/cache_miss_handler.dart';
 // Cloud storage
 export 'package:serverpod/src/cloud_storage/cloud_storage.dart';
 export 'package:serverpod/src/cloud_storage/database_cloud_storage.dart';
-
-// Cache
-export 'package:serverpod/src/cache/cache_miss_handler.dart';
-
-export 'package:meta/meta.dart' show useResult;
+export 'package:serverpod/src/generated/log_level.dart';
+export 'package:serverpod/src/util/http_request_extension.dart';
+// Serialization and logging
+export 'package:serverpod_serialization/serverpod_serialization.dart';
+// Config
+export 'package:serverpod_shared/src/config.dart';
